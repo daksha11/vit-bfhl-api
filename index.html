@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <title>VIT BFHL API Tester</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0b0e14; --panel:#131826; --panel-2:#0f1420; --border:#24304a; --acc:#6aa3ff;
+      --text:#e8ecf1; --muted:#b6c0cc; --ok:#34d399; --err:#f87171; --warn:#fbbf24;
+      --chip:#0f1420; --chip-border:#2a3140; --shadow:0 10px 30px rgba(0,0,0,.25);
+      --focus:0 0 0 3px rgba(106,163,255,.25);
+    }
+    [data-theme="light"]{
+      --bg:#f6f8fb; --panel:#ffffff; --panel-2:#f2f5fb; --border:#e3e8f2; --acc:#375dfb;
+      --text:#10151d; --muted:#556176; --ok:#059669; --err:#dc2626; --warn:#b45309;
+      --chip:#eef2ff; --chip-border:#c7d2fe; --shadow:0 10px 30px rgba(16,21,29,.08);
+      --focus:0 0 0 3px rgba(55,93,251,.2);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
+    header.sticky{position:sticky;top:0;z-index:5;backdrop-filter:saturate(120%) blur(6px);background:color-mix(in oklab, var(--bg) 80%, transparent);border-bottom:1px solid var(--border)}
+    header .bar{display:flex;align-items:center;gap:12px;max-width:1100px;margin:0 auto;padding:12px 16px}
+    .title{font-weight:800;letter-spacing:0.3px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--chip);border:1px solid var(--chip-border);color:var(--muted);font-size:12px}
+    .theme{margin-left:auto;display:flex;align-items:center;gap:8px}
+    .toggle{appearance:none;width:44px;height:26px;border-radius:999px;background:var(--panel-2);border:1px solid var(--border);position:relative;cursor:pointer;outline:none}
+    .toggle:focus-visible{box-shadow:var(--focus)}
+    .toggle:before{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--text);transition:transform .2s}
+    .toggle:checked:before{transform:translateX(18px)}
+    h1{font-size:24px;margin:16px 0 6px}
+    p.sub{color:var(--muted);margin:0 0 10px}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow)}
+    label{display:block;font-weight:700;margin-bottom:8px}
+    input[type="text"],textarea{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:14px;outline:none}
+    input[type="text"]:focus,textarea:focus{box-shadow:var(--focus);border-color:var(--acc)}
+    textarea{min-height:160px;resize:vertical}
+    .row{display:flex;flex-wrap:wrap;gap:10px}
+    .btn{background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700;transition:.15s}
+    .btn:hover{border-color:var(--acc);transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
+    .btn.acc{background:var(--acc);color:white;border-color:transparent}
+    .btn.ghost{background:transparent}
+    .hint{color:var(--muted);font-size:12px;margin-top:6px}
+    .status{font-weight:800}
+    .status.ok{color:var(--ok)} .status.err{color:var(--err)} .status.warn{color:var(--warn)}
+    .panel-slim{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+    .linenos{counter-reset:line;white-space:pre}
+    .linenos code{display:block}
+    .linenos code:before{counter-increment:line;content:counter(line);display:inline-block;width:2ch;margin-right:12px;color:var(--muted)}
+    pre{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:12px;overflow:auto}
+    .tabs{display:flex;gap:6px;margin-bottom:10px}
+    .tab{padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--panel-2);cursor:pointer;font-weight:700}
+    .tab.active{border-color:var(--acc)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{background:var(--chip);border:1px solid var(--chip-border);border-radius:999px;padding:6px 10px;font-size:12px}
+    .kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0}
+    .kpi .card{padding:12px;text-align:center}
+    .kpi .num{font-size:20px;font-weight:900}
+    .drop{border:2px dashed var(--border);padding:18px;border-radius:12px;text-align:center;transition:.2s}
+    .drop.drag{border-color:var(--acc);background:color-mix(in oklab, var(--acc) 10%, transparent)}
+    .footer{color:var(--muted);font-size:12px;margin:24px 0;text-align:center}
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);padding:10px 14px;border-radius:10px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s}
+    .toast.show{opacity:1}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel-2);font-size:12px}
+    .sep{height:1px;background:var(--border);margin:12px 0}
+    .right{margin-left:auto}
+  </style>
+</head>
+<body>
+  <header class="sticky">
+    <div class="bar">
+      <div class="title">VIT BFHL API Tester</div>
+      <span class="pill">POST <strong>/bfhl</strong></span>
+      <span id="validBadge" class="badge">Awaiting input…</span>
+      <div class="theme">
+        <span class="hint">Light</span>
+        <input id="themeToggle" class="toggle" type="checkbox" aria-label="Toggle theme" />
+        <span class="hint">Dark</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <p class="sub">Paste an array (JSON or CSV), attach a file, or load an example. Hit <strong>Ctrl/Cmd+Enter</strong> to send.</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="panel-slim">
+          <div>
+            <label for="endpoint">Endpoint</label>
+            <input id="endpoint" type="text" value="/bfhl" />
+            <div class="hint">Remembered automatically. Local: <code>http://localhost:3000/bfhl</code> with <code>vercel dev</code>.</div>
+          </div>
+          <div class="row" style="justify-content:end">
+            <button class="btn ghost" id="shareBtn" title="Copy shareable link">Share</button>
+            <button class="btn" id="resetBtn" title="Reset UI">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>Upload (JSON/CSV)</label>
+        <div id="drop" class="drop">Drag & drop a JSON/CSV file here or <button class="btn" id="fileBtn" type="button">Choose file</button>
+          <input id="file" type="file" accept=".json,.txt,.csv" hidden />
+        </div>
+        <div class="hint">We never upload files anywhere — parsing happens in your browser.</div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:12px">
+      <div class="card">
+        <label for="payload">Input Array</label>
+        <textarea id="payload" placeholder='Examples:
+["a","1","334","4","R","$"]
+2,a,y,4,&,-,*,5,92,b
+["A","ABcD","DOE"]'></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" onclick="loadExample(1)">Example A</button>
+          <button class="btn" onclick="loadExample(2)">Example B</button>
+          <button class="btn" onclick="loadExample(3)">Example C</button>
+          <div class="right"></div>
+          <button class="btn" onclick="formatAsJson()">Prettify</button>
+          <button class="btn" onclick="clearInput()">Clear</button>
+          <button class="btn acc" onclick="send()">Send ↵</button>
+        </div>
+        <div class="hint">Validation updates live. JSON is preferred; CSV is accepted too.</div>
+      </div>
+
+      <div class="card">
+        <strong>Request Preview</strong>
+        <pre class="linenos"><code id="reqPreview">{}</code></pre>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" onclick="copy('#reqPreview')">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="row" style="align-items:center;gap:10px">
+        <strong>Response</strong>
+        <span id="status" class="status"></span>
+        <div class="right"></div>
+        <div class="tabs">
+          <button class="tab active btn" data-tab="raw">Raw JSON</button>
+          <button class="tab btn" data-tab="breakdown">Breakdown</button>
+        </div>
+      </div>
+      <div id="rawTab">
+        <pre class="linenos"><code id="response">{}</code></pre>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" onclick="copy('#response')">Copy JSON</button>
+          <button class="btn" onclick="pretty('#response')">Prettify</button>
+        </div>
+      </div>
+      <div id="breakdownTab" style="display:none">
+        <div id="kpi" class="kpi"></div>
+        <div class="sep"></div>
+        <div id="chipsWrap"></div>
+      </div>
+    </div>
+
+    <div class="footer">Minimal, interactive, and deploy-ready — built specifically for the VIT BFHL brief.</div>
+  </div>
+
+  <div id="toast" class="toast">Copied!</div>
+
+  <script>
+    // ---------- THEME ----------
+    const themeToggle = document.getElementById('themeToggle');
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggle.checked = savedTheme === 'dark';
+    themeToggle.addEventListener('change', () => {
+      const mode = themeToggle.checked ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', mode);
+      localStorage.setItem('theme', mode);
+    });
+
+    // ---------- ELEMENTS ----------
+    const endpointEl = document.querySelector('#endpoint');
+    const payloadEl  = document.querySelector('#payload');
+    const reqPreview = document.querySelector('#reqPreview');
+    const responseEl = document.querySelector('#response');
+    const statusEl   = document.querySelector('#status');
+    const validBadge = document.querySelector('#validBadge');
+    const shareBtn   = document.querySelector('#shareBtn');
+    const resetBtn   = document.querySelector('#resetBtn');
+    const toastEl    = document.querySelector('#toast');
+    const dropEl     = document.querySelector('#drop');
+    const fileBtn    = document.querySelector('#fileBtn');
+    const fileInput  = document.querySelector('#file');
+    const rawTabBtn  = document.querySelector('.tab[data-tab="raw"]');
+    const brkTabBtn  = document.querySelector('.tab[data-tab="breakdown"]');
+    const rawTab     = document.querySelector('#rawTab');
+    const brkTab     = document.querySelector('#breakdownTab');
+    const kpiWrap    = document.querySelector('#kpi');
+    const chipsWrap  = document.querySelector('#chipsWrap');
+
+    // Remember endpoint
+    endpointEl.value = localStorage.getItem('bfhl_endpoint') || endpointEl.value;
+    endpointEl.addEventListener('input', () => localStorage.setItem('bfhl_endpoint', endpointEl.value.trim()));
+
+    // ---------- HELPERS ----------
+    const showToast = (msg='Copied!') => {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(()=> toastEl.classList.remove('show'), 1600);
+    };
+
+    const tryJSON = (text) => {
+      try { return JSON.parse(text); } catch { return null; }
+    };
+
+    const parseInputToArray = (text) => {
+      const trimmed = (text || '').trim();
+      if (!trimmed) return [];
+      const maybe = tryJSON(trimmed);
+      if (Array.isArray(maybe)) return maybe;
+      // CSV fallback (split by commas/newlines)
+      return trimmed.split(/[\n,]/).map(s=>s.trim()).filter(Boolean);
+    };
+
+    const updatePreview = () => {
+      const arr = parseInputToArray(payloadEl.value);
+      const req = { data: arr };
+      reqPreview.textContent = JSON.stringify(req, null, 2);
+      // validation badge
+      if (!arr.length) {
+        validBadge.textContent = 'Awaiting input…';
+        validBadge.className = 'badge';
+      } else if (Array.isArray(arr)) {
+        validBadge.textContent = `Valid input • ${arr.length} item(s)`;
+        validBadge.className = 'badge';
+      } else {
+        validBadge.textContent = 'Invalid input';
+        validBadge.className = 'badge';
+      }
+    };
+
+    const formatAsJson = () => {
+      const arr = parseInputToArray(payloadEl.value);
+      payloadEl.value = JSON.stringify(arr, null, 2);
+      updatePreview();
+    };
+
+    const clearInput = () => {
+      payloadEl.value = '';
+      updatePreview();
+      statusEl.textContent = '';
+      responseEl.textContent = '{}';
+      kpiWrap.innerHTML = ''; chipsWrap.innerHTML = '';
+    };
+
+    const copy = async (sel) => {
+      const el = document.querySelector(sel);
+      await navigator.clipboard.writeText(el.textContent || '');
+      showToast();
+    };
+
+    const pretty = (sel) => {
+      const el = document.querySelector(sel);
+      const obj = tryJSON(el.textContent || '{}');
+      if (obj) el.textContent = JSON.stringify(obj, null, 2);
+    };
+
+    const loadExample = (n) => {
+      const examples = {
+        1: ["a","1","334","4","R","$"],
+        2: ["2","a","y","4","&","-","*","5","92","b"],
+        3: ["A","ABcD","DOE"]
+      };
+      const data = examples[n] || [];
+      payloadEl.value = JSON.stringify(data, null, 2);
+      updatePreview();
+    };
+
+    const share = async () => {
+      const arr = parseInputToArray(payloadEl.value);
+      const ep  = (endpointEl.value || '/bfhl').trim();
+      const url = new URL(window.location.href);
+      url.hash = encodeURIComponent(JSON.stringify({ ep, data: arr }));
+      await navigator.clipboard.writeText(url.toString());
+      showToast('Share link copied!');
+    };
+
+    const loadFromHash = () => {
+      if (!location.hash) return;
+      try {
+        const obj = JSON.parse(decodeURIComponent(location.hash.slice(1)));
+        if (obj?.ep) endpointEl.value = obj.ep;
+        if (Array.isArray(obj?.data)) payloadEl.value = JSON.stringify(obj.data, null, 2);
+      } catch {}
+    };
+
+    const switchTab = (name) => {
+      if (name === 'raw'){ rawTab.style.display='block'; brkTab.style.display='none'; rawTabBtn.classList.add('active'); brkTabBtn.classList.remove('active'); }
+      else { rawTab.style.display='none'; brkTab.style.display='block'; brkTabBtn.classList.add('active'); rawTabBtn.classList.remove('active'); }
+    };
+
+    const renderBreakdown = (json) => {
+      // KPIs
+      const getLen = (k)=> Array.isArray(json?.[k]) ? json[k].length : 0;
+      const kpis = [
+        {label:'Even', val:getLen('even_numbers')},
+        {label:'Odd', val:getLen('odd_numbers')},
+        {label:'Alphabets', val:getLen('alphabets')},
+        {label:'Special', val:getLen('special_characters')}
+      ];
+      kpiWrap.innerHTML = kpis.map(k => `
+        <div class="card">
+          <div class="num">${k.val}</div>
+          <div class="hint">${k.label}</div>
+        </div>`).join('');
+
+      // Chips per category
+      const mkChips = (title, arr=[]) => `
+        <div>
+          <div style="font-weight:800;margin:8px 0">${title}</div>
+          <div class="chips">
+            ${arr.map(x=>`<span class="chip">${String(x)}</span>`).join('') || '<span class="hint">None</span>'}
+          </div>
+        </div>
+      `;
+      chipsWrap.innerHTML = [
+        mkChips('even_numbers', json?.even_numbers),
+        mkChips('odd_numbers', json?.odd_numbers),
+        mkChips('alphabets', json?.alphabets),
+        mkChips('special_characters', json?.special_characters),
+        `<div style="margin-top:10px">
+           <span class="chip"><strong>sum</strong>: ${json?.sum ?? '0'}</span>
+           <span class="chip"><strong>concat_string</strong>: ${json?.concat_string ?? ''}</span>
+         </div>`
+      ].join('');
+    };
+
+    // ---------- NETWORK ----------
+    const send = async () => {
+      const endpoint = (endpointEl.value || '/bfhl').trim();
+      const data = parseInputToArray(payloadEl.value);
+      const body = { data };
+
+      reqPreview.textContent = JSON.stringify(body, null, 2);
+      statusEl.textContent = 'Sending…';
+      statusEl.className = 'status';
+
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const json = await res.json().catch(()=> ({}));
+        responseEl.textContent = JSON.stringify(json, null, 2);
+
+        if (res.ok && json && json.is_success === true) {
+          statusEl.textContent = 'Success (200)';
+          statusEl.className = 'status ok';
+        } else {
+          statusEl.textContent = `Error (${res.status})`;
+          statusEl.className = res.status === 405 ? 'status warn' : 'status err';
+        }
+        renderBreakdown(json);
+      } catch (err) {
+        responseEl.textContent = JSON.stringify({ error:String(err) }, null, 2);
+        statusEl.textContent = 'Network Error';
+        statusEl.className = 'status err';
+      }
+    };
+
+    // ---------- FILE UPLOAD ----------
+    const readFile = (file) => new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+
+    dropEl.addEventListener('dragover', e => { e.preventDefault(); dropEl.classList.add('drag'); });
+    dropEl.addEventListener('dragleave', () => dropEl.classList.remove('drag'));
+    dropEl.addEventListener('drop', async e => {
+      e.preventDefault(); dropEl.classList.remove('drag');
+      const file = e.dataTransfer.files?.[0]; if (!file) return;
+      const text = await readFile(file);
+      payloadEl.value = text;
+      updatePreview();
+      showToast('Loaded from file');
+    });
+    fileBtn.addEventListener('click', ()=> fileInput.click());
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files?.[0]; if (!file) return;
+      const text = await readFile(file);
+      payloadEl.value = text;
+      updatePreview();
+      showToast('Loaded from file');
+    });
+
+    // ---------- EVENTS ----------
+    payloadEl.addEventListener('input', updatePreview);
+    shareBtn.addEventListener('click', share);
+    resetBtn.addEventListener('click', () => { clearInput(); endpointEl.value='/bfhl'; localStorage.removeItem('bfhl_endpoint'); showToast('Reset'); });
+    rawTabBtn.addEventListener('click', ()=> switchTab('raw'));
+    brkTabBtn.addEventListener('click', ()=> switchTab('breakdown'));
+    document.addEventListener('keydown', (e)=>{
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') send();
+    });
+
+    // ---------- INIT ----------
+    loadFromHash();
+    loadExample(1);
+    updatePreview();
+  </script>
+</body>
+</html>
