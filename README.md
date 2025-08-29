@@ -69,4 +69,3 @@ Expected response (example):
 ```
 
 ---
-✅ Minimal, production-ready, and deployable in **under an hour**.
